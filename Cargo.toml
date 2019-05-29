@@ -1,0 +1,9 @@
+[package]
+name = "rust"
+version = "0.1.0"
+authors = ["OlivierLemoine <olivier.lemoine@sii.fr>"]
+edition = "2018"
+
+[dependencies]
+tictactoe = { path = "tictactoe" }
+mcts = { path = "mcts" }
