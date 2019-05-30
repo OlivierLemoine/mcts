@@ -36,13 +36,35 @@ impl Tree {
         })
     }
 
-    fn select<T: GameTest>(&mut self, g: &mut T) -> &mut Tree {
+    fn explore_index(&self, total_step: u32) -> usize {
+        let sqrt2 = (2.0 as f32).sqrt();
+        let tot_step_ln = (total_step as f32).ln();
+
+        let mut score = 0.0;
+        self.children.iter().enumerate().fold(0, |acc, (index, t)| {
+            if t.plays == 0 {
+                score = 100000.0;
+                index
+            } else {
+                let new_score =
+                    t.wins as f32 / t.plays as f32 + sqrt2 * (tot_step_ln / t.plays as f32).sqrt();
+                if new_score > score {
+                    score = new_score;
+                    index
+                } else {
+                    acc
+                }
+            }
+        })
+    }
+
+    fn select<T: GameTest>(&mut self, g: &mut T, total_step: u32) -> &mut Tree {
         if self.children.len() == 0 {
             self
         } else {
-            let index = self.best_child_index();
+            let index = self.explore_index(total_step);
             g.play(index);
-            self.children[index].select(g)
+            self.children[index].select(g, total_step)
         }
     }
 
@@ -91,6 +113,7 @@ impl Tree {
 
 pub struct MCTS {
     tree: Tree,
+    tot_step: u32,
 }
 
 impl MCTS {
@@ -102,13 +125,14 @@ impl MCTS {
                 wins: 0,
                 action: 0,
             },
+            tot_step: 0,
         }
     }
 
-    pub fn best_move<T: GameTest + Clone>(&mut self, g: &mut T) -> usize {
+    pub fn train<T: GameTest + Clone>(&mut self, g: &mut T) {
         let mut new_g: T = g.clone();
 
-        let mut leaf = self.tree.select(&mut new_g);
+        let mut leaf = self.tree.select(&mut new_g, self.tot_step);
         leaf.expand(new_g.valid_actions());
         let mut acc_win = 0;
         let mut acc_play = 0;
@@ -121,6 +145,12 @@ impl MCTS {
         }
 
         self.tree.backprop(acc_play, acc_win);
+
+        self.tot_step += 1;
+    }
+
+    pub fn best_move<T: GameTest + Clone>(&mut self, g: &mut T) -> usize {
+        self.train(g);
 
         let best_index = self.tree.best_child_index();
         let mut new_tree = self.tree.children[best_index].clone();

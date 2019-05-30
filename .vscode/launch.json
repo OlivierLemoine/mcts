@@ -8,9 +8,15 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/target/debug/rust",
+            "linux": {
+                "program": "${workspaceFolder}/target/debug/rust"
+            },
+            "windows": {
+                "program": "${workspaceFolder}/target/debug/rust.exe",
+                "miDebuggerPath": "C:/Users/olivier/AppData/Local/Programs/MinGW/bin/gdb.exe"
+            },
             "args": [],
-            "stopAtEntry": false,
+            "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": true,

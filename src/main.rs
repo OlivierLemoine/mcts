@@ -31,6 +31,10 @@ fn main() {
     let mut g = Game(tictactoe::Game::new(), tictactoe::Check::O);
     let mut m = mcts::MCTS::new();
 
+    for _ in 0..100 {
+        m.train(&mut g);
+    }
+
     loop {
         println!("{}", g.0.show());
 
