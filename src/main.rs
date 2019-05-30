@@ -33,6 +33,7 @@ fn main() {
 
     for _ in 0..100 {
         m.train(&mut g);
+        // println!("{:?}", m);
     }
 
     loop {
@@ -41,15 +42,15 @@ fn main() {
         let mut res = String::new();
         std::io::stdin().read_line(&mut res).unwrap();
         let int = match res.trim() {
-            "7" => 0,
-            "8" => 1,
-            "9" => 2,
-            "4" => 3,
-            "5" => 4,
-            "6" => 5,
-            "1" => 6,
-            "2" => 7,
-            "3" => 8,
+            "0" => 0,
+            "1" => 1,
+            "2" => 2,
+            "3" => 3,
+            "4" => 4,
+            "5" => 5,
+            "6" => 6,
+            "7" => 7,
+            "8" => 8,
             _ => {
                 println!("Not a valid entry");
                 continue;
@@ -62,10 +63,17 @@ fn main() {
                 continue;
             }
             Some(_) => {
-                g.play(int as usize);
+                m.apply_ext(&mut g, int as usize);
 
-                let mov = m.best_move(&mut g);
-                g.play(mov);
+                println!("{:?}", m);
+
+                m.play_best_move(&mut g);
+
+                for _ in 0..10 {
+                    m.train(&mut g);
+                }
+
+                println!("{:?}", m);
             }
         }
     }

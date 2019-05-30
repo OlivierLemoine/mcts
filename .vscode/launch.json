@@ -15,19 +15,9 @@
                 "program": "${workspaceFolder}/target/debug/rust.exe",
                 "miDebuggerPath": "C:/Users/olivier/AppData/Local/Programs/MinGW/bin/gdb.exe"
             },
-            "args": [],
             "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
-            "environment": [],
             "externalConsole": true,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
         }
     ]
 }

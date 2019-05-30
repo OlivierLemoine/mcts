@@ -58,13 +58,23 @@ impl Tree {
         })
     }
 
-    fn select<T: GameTest>(&mut self, g: &mut T, total_step: u32) -> &mut Tree {
-        if self.children.len() == 0 {
+    fn get_at(&mut self, path: &Vec<usize>, from: usize, at: usize) -> &mut Tree {
+        if from == at {
             self
         } else {
+            self.children[path[from]].get_at(path, from + 1, at)
+        }
+    }
+
+    fn select<T: GameTest>(&mut self, g: &mut T, total_step: u32) -> Vec<usize> {
+        if self.children.len() == 0 {
+            vec![]
+        } else {
             let index = self.explore_index(total_step);
-            g.play(index);
-            self.children[index].select(g, total_step)
+            g.play(self.children[index].action);
+            let mut res = self.children[index].select(g, total_step);
+            res.push(index);
+            res
         }
     }
 
@@ -101,12 +111,32 @@ impl Tree {
         }
     }
 
-    fn backprop(&mut self, plays: u32, wins: u32) {
-        if self.children.len() != 0 {
-            self.plays += plays;
-            self.wins += wins;
+    fn backprop(&mut self, path: &Vec<usize>, from: usize, plays: u32, wins: u32) {
+        self.plays += plays;
+        self.wins += wins;
+        if from < path.len() {
             let index = self.best_child_index();
-            self.children[index].backprop(plays, wins)
+            self.children[path[from]].backprop(path, from + 1, plays, wins)
+        }
+    }
+
+    fn fmt(&self, i: usize) -> String {
+        if self.children.len() == 0 {
+            String::new()
+        } else {
+            self.children
+                .iter()
+                .fold(String::new(), |acc: String, c: &Tree| {
+                    format!(
+                        "{}{:2}:{:2}/{:2}--{}\n{}",
+                        acc,
+                        c.action,
+                        c.wins,
+                        c.plays,
+                        c.fmt(i + 1),
+                        String::from(" |        ").repeat(i)
+                    )
+                })
         }
     }
 }
@@ -114,6 +144,13 @@ impl Tree {
 pub struct MCTS {
     tree: Tree,
     tot_step: u32,
+}
+
+impl std::fmt::Debug for MCTS {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let res = format!("{}", self.tree.fmt(1));
+        write!(f, " @:{:2}/{:2}--{}", self.tree.wins, self.tree.plays, res)
+    }
 }
 
 impl MCTS {
@@ -132,8 +169,11 @@ impl MCTS {
     pub fn train<T: GameTest + Clone>(&mut self, g: &mut T) {
         let mut new_g: T = g.clone();
 
-        let mut leaf = self.tree.select(&mut new_g, self.tot_step);
+        let mut path = self.tree.select(&mut new_g, self.tot_step);
+        let leaf = self.tree.get_at(&path, 0, path.len());
+
         leaf.expand(new_g.valid_actions());
+
         let mut acc_win = 0;
         let mut acc_play = 0;
 
@@ -144,18 +184,35 @@ impl MCTS {
             acc_play += 1;
         }
 
-        self.tree.backprop(acc_play, acc_win);
+        self.tree.backprop(&path, 0, acc_play, acc_win);
 
         self.tot_step += 1;
     }
 
-    pub fn best_move<T: GameTest + Clone>(&mut self, g: &mut T) -> usize {
+    pub fn apply_ext<T: GameTest + Clone>(&mut self, g: &mut T, play: usize) {
+        self.update(
+            g,
+            self.tree
+                .children
+                .iter()
+                .position(|v| v.action == play)
+                .unwrap(),
+        )
+    }
+
+    fn update<T: GameTest + Clone>(&mut self, g: &mut T, play: usize) {
+        let mut new_tree = self.tree.children[play].clone();
+        std::mem::swap(&mut self.tree, &mut new_tree);
+
+        g.play(self.tree.action);
+
+        self.train(g);
+    }
+
+    pub fn play_best_move<T: GameTest + Clone>(&mut self, g: &mut T) {
         self.train(g);
 
         let best_index = self.tree.best_child_index();
-        let mut new_tree = self.tree.children[best_index].clone();
-        std::mem::swap(&mut self.tree, &mut new_tree);
-
-        self.tree.action
+        self.update(g, best_index);
     }
 }
