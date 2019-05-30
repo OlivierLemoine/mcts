@@ -31,7 +31,7 @@ fn main() {
     let mut g = Game(tictactoe::Game::new(), tictactoe::Check::O);
     let mut m = mcts::MCTS::new();
 
-    for _ in 0..100 {
+    for _ in 0..1000 {
         m.train(&mut g);
         // println!("{:?}", m);
     }
@@ -65,15 +65,11 @@ fn main() {
             Some(_) => {
                 m.apply_ext(&mut g, int as usize);
 
-                println!("{:?}", m);
-
                 m.play_best_move(&mut g);
 
-                for _ in 0..10 {
+                for _ in 0..100 {
                     m.train(&mut g);
                 }
-
-                println!("{:?}", m);
             }
         }
     }

@@ -73,7 +73,7 @@ impl Tree {
             let index = self.explore_index(total_step);
             g.play(self.children[index].action);
             let mut res = self.children[index].select(g, total_step);
-            res.push(index);
+            res.insert(0, index);
             res
         }
     }
@@ -169,7 +169,7 @@ impl MCTS {
     pub fn train<T: GameTest + Clone>(&mut self, g: &mut T) {
         let mut new_g: T = g.clone();
 
-        let mut path = self.tree.select(&mut new_g, self.tot_step);
+        let path = self.tree.select(&mut new_g, self.tot_step);
         let leaf = self.tree.get_at(&path, 0, path.len());
 
         leaf.expand(new_g.valid_actions());
